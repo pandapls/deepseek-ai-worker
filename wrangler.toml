@@ -1,0 +1,5 @@
+name = "deepseek-ai-worker"
+main = "src/index.ts"
+compatibility_date = "2025-5-10"
+[vars]
+
