@@ -52,6 +52,17 @@ function getCORSHeaders(request: Request, env: Env): Record<string, string> {
 }
 export default {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+		// 添加请求URL和方法的日志
+		console.log(`收到请求: ${request.method} ${request.url}`);
+
+		// 检查是否是 /graphql 路径
+		const url = new URL(request.url);
+		// 如果路径不是 /graphql，返回404
+		if (url.pathname !== '/graphql') {
+			console.log(`路径不匹配: ${url.pathname}, 期望: /graphql`);
+			return new Response('Not Found', { status: 404 });
+		}
+
 		if (request.method === 'OPTIONS') {
 			return new Response(null, {
 				status: 204,
@@ -96,13 +107,25 @@ export default {
 			}),
 			fetchAPI: { Request, Response }, // Cloudflare Workers 兼容性设置
 			graphiql: !isProduction,
+			// 确保GraphQL端点在/graphql路径
+			graphqlEndpoint: '/graphql',
+			// 添加logging
+			logging: true,
 		});
-		const response = await yoga.fetch(request, env);
-		const corsHeaders = getCORSHeaders(request, env);
-		for (const [key, value] of Object.entries(corsHeaders)) {
-			response.headers.set(key, value);
-		}
 
-		return response;
+		try {
+			const response = await yoga.fetch(request, env);
+			const corsHeaders = getCORSHeaders(request, env);
+			for (const [key, value] of Object.entries(corsHeaders)) {
+				response.headers.set(key, value);
+			}
+			return response;
+		} catch (error: any) {
+			console.error('GraphQL处理错误:', error);
+			return new Response(`处理请求时出错: ${error.message}`, {
+				status: 500,
+				headers: getCORSHeaders(request, env)
+			});
+		}
 	},
 };
