@@ -37,7 +37,6 @@ interface DeepSeekResponse {
 function getCORSHeaders(request: Request, env: Env): Record<string, string> {
 	const origin = request.headers.get('Origin') || '';
 	let allowedOrigin = '';
-
 	if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
 		allowedOrigin = origin;
 	} else if (origin.endsWith(env.DOAMIN)) {
@@ -53,6 +52,13 @@ function getCORSHeaders(request: Request, env: Env): Record<string, string> {
 }
 export default {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+		if (request.method === 'OPTIONS') {
+			return new Response(null, {
+				status: 204,
+				headers: getCORSHeaders(request, env)
+			});
+		}
+
 		const isProduction = env.ENVIRONMENT === 'production';
 		const yoga = createYoga({
 			schema: createSchema({
